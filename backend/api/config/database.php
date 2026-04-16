@@ -5,7 +5,7 @@ class Database {
     private $port = "4000";
     private $db_name = "ccs_profiling_db";
     private $username = "2jRXLtAnEIpwtMri.root";
-    private $password = "RaxcJTIiHfBaN24c";
+    private $password = "uI9QPTnyEKIrnyPf";
 
     public $conn;
 
