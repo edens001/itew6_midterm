@@ -1,11 +1,6 @@
 import axios from 'axios'
 
-// Use environment variable for API URL
-// For production on Render, this should be set in Render dashboard
-// For local development, use localhost
-const API_URL = process.env.VUE_APP_API_URL 
-  ? `${process.env.VUE_APP_API_URL}/admin` 
-  : 'http://localhost/ccs-profiling-system/backend/api/admin'
+const API_URL = 'http://localhost/ccs-profiling-system/backend/api/admin'
 
 export default {
   namespaced: true,
@@ -41,13 +36,9 @@ export default {
   },
   
   actions: {
-    async getDashboardData({ commit, rootState }) {
+    async getDashboardData({ commit }) {
       try {
-        // Get token from auth module
-        const token = rootState.auth?.token
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
-        
-        const response = await axios.get(`${API_URL}/dashboard.php`, { headers })
+        const response = await axios.get(`${API_URL}/dashboard.php`)
         commit('SET_DASHBOARD_DATA', response.data)
         return response.data
       } catch (error) {
@@ -56,12 +47,9 @@ export default {
       }
     },
     
-    async getStudents({ commit, rootState }, params = {}) {
+    async getStudents({ commit }, params = {}) {
       try {
-        const token = rootState.auth?.token
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
-        
-        const response = await axios.get(`${API_URL}/students/`, { params, headers })
+        const response = await axios.get(`${API_URL}/students/`, { params })
         commit('SET_STUDENTS', response.data)
         return response.data
       } catch (error) {
@@ -70,12 +58,9 @@ export default {
       }
     },
     
-    async createStudent({ dispatch, rootState }, studentData) {
+    async createStudent({ dispatch }, studentData) {
       try {
-        const token = rootState.auth?.token
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
-        
-        const response = await axios.post(`${API_URL}/students/`, studentData, { headers })
+        const response = await axios.post(`${API_URL}/students/`, studentData)
         await dispatch('getStudents')
         return response.data
       } catch (error) {
@@ -84,12 +69,9 @@ export default {
       }
     },
     
-    async updateStudent({ dispatch, rootState }, { id, data }) {
+    async updateStudent({ dispatch }, { id, data }) {
       try {
-        const token = rootState.auth?.token
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
-        
-        const response = await axios.put(`${API_URL}/students/update.php?id=${id}`, data, { headers })
+        const response = await axios.put(`${API_URL}/students/update.php?id=${id}`, data)
         await dispatch('getStudents')
         return response.data
       } catch (error) {
@@ -98,12 +80,9 @@ export default {
       }
     },
     
-    async deleteStudent({ dispatch, rootState }, id) {
+    async deleteStudent({ dispatch }, id) {
       try {
-        const token = rootState.auth?.token
-        const headers = token ? { 'Authorization': `Bearer ${token}` } : {}
-        
-        const response = await axios.delete(`${API_URL}/students/delete.php?id=${id}`, { headers })
+        const response = await axios.delete(`${API_URL}/students/delete.php?id=${id}`)
         await dispatch('getStudents')
         return response.data
       } catch (error) {

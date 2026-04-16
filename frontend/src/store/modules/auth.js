@@ -1,7 +1,7 @@
 import axios from 'axios'
-import router from '@/router'
 
-// Use environment variable for production
+// This will use VUE_APP_API_URL from Render environment
+// Fallback to localhost for development
 const API_URL = process.env.VUE_APP_API_URL || 'http://localhost/ccs-profiling-system/backend/api'
 
 export default {
@@ -74,8 +74,7 @@ export default {
         }, {
           headers: {
             'Content-Type': 'application/json'
-          },
-          timeout: 30000 // 30 seconds for TiDB Cloud
+          }
         })
         
         console.log('Response:', response.data)
@@ -101,19 +100,12 @@ export default {
     logout({ commit }) {
       commit('CLEAR_AUTH')
       delete axios.defaults.headers.common['Authorization']
-      if (router.currentRoute.path !== '/login') {
-        router.push('/login')
-      }
     },
     
     checkAuth({ state, commit }) {
       if (state.token && state.user && state.user.role) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${state.token}`
         return true
-      } else if (state.token && (!state.user || !state.user.role)) {
-        console.log('Corrupted auth state detected, clearing...')
-        commit('CLEAR_AUTH')
-        return false
       }
       return false
     }
