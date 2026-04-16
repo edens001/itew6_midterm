@@ -10,17 +10,23 @@ WORKDIR /app
 COPY frontend/package*.json ./
 COPY frontend/package-lock.json* ./
 
-# Install dependencies with legacy peer deps for Vue CLI compatibility
+# Install dependencies (run as root in alpine)
 RUN npm install --legacy-peer-deps
 
 # Copy frontend source code
 COPY frontend/ ./
 
-# Build Vue.js app (outputs to 'dist' folder)
+# Fix: Use npm directly without npx and ensure proper permissions
+RUN chmod -R 755 node_modules/.bin/
+
+# Build Vue.js app (use npm run directly)
 RUN npm run build
 
 # Verify build output exists
-RUN test -d dist && echo "Build successful" || (echo "Build failed - dist folder not found" && exit 1)
+RUN test -d dist && echo "✅ Build successful" || (echo "❌ Build failed - dist folder not found" && exit 1)
+
+# List dist contents for debugging
+RUN ls -la dist/
 
 # Stage 2: Production Image with PHP/Apache
 FROM php:8.2-apache
@@ -36,6 +42,7 @@ RUN apt-get update && \
     unzip \
     ca-certificates \
     libssl-dev \
+    sudo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && update-ca-certificates
@@ -52,10 +59,10 @@ RUN docker-php-ext-install \
 # Enable Apache modules
 RUN a2enmod rewrite headers expires
 
-# Copy backend files FIRST (before overwriting)
+# Copy backend files
 COPY backend/ /var/www/html/backend/
 
-# Copy built Vue.js frontend from builder stage to root
+# Copy built Vue.js frontend from builder stage
 COPY --from=frontend-builder /app/dist /var/www/html/
 
 # Create necessary upload directories
@@ -98,7 +105,7 @@ RUN cat > /var/www/html/.htaccess << 'EOF'
 Options -Indexes
 EOF
 
-# Create .htaccess for backend API (for proper routing)
+# Create .htaccess for backend API
 RUN cat > /var/www/html/backend/api/.htaccess << 'EOF'
 <IfModule mod_rewrite.c>
     RewriteEngine On
@@ -160,8 +167,8 @@ RUN echo "upload_max_filesize = 20M" > /usr/local/etc/php/conf.d/uploads.ini && 
     echo "mysqli.allow_local_infile = on" >> /usr/local/etc/php/conf.d/uploads.ini
 
 # PHP configuration for SSL (TiDB Cloud requirement)
-RUN echo "mysqli.default_socket =" > /usr/local/etc/php/conf.d/ti-db.ini && \
-    echo "pdo_mysql.default_socket =" >> /usr/local/etc/php/conf.d/ti-db.ini
+RUN echo "mysqli.default_socket =" > /usr/local/etc/php/conf.d/tidb.ini && \
+    echo "pdo_mysql.default_socket =" >> /usr/local/etc/php/conf.d/tidb.ini
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
