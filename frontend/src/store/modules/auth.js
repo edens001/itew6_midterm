@@ -1,7 +1,8 @@
 import axios from 'axios'
 import router from '@/router'
 
-const API_URL = 'http://localhost/ccs-profiling-system/backend/api'
+// ✅ YOUR BACKEND (InfinityFree)
+const API_URL = 'http://backendexam.infinityfreeapp.com/api'
 
 export default {
   namespaced: true,
@@ -16,6 +17,7 @@ export default {
     SET_TOKEN(state, token) {
       state.token = token
       state.isAuthenticated = !!token
+      
       if (token) {
         localStorage.setItem('token', token)
       } else {
@@ -25,6 +27,7 @@ export default {
     
     SET_USER(state, user) {
       state.user = user
+      
       if (user) {
         localStorage.setItem('user', JSON.stringify(user))
       } else {
@@ -36,6 +39,7 @@ export default {
       state.token = null
       state.user = null
       state.isAuthenticated = false
+      
       localStorage.removeItem('token')
       localStorage.removeItem('user')
     }
@@ -44,24 +48,27 @@ export default {
   actions: {
     async login({ commit }, credentials) {
       try {
-        let endpoint = '';
+        let endpoint = ''
         
-        // Determine which login endpoint to use
-        switch(credentials.role) {
+        // Role-based login routing
+        switch (credentials.role) {
           case 'admin':
           case 'dean':
           case 'dept_chair':
           case 'secretary':
-            endpoint = `${API_URL}/admin/auth/login.php`;
-            break;
+            endpoint = `${API_URL}/admin/auth/login.php`
+            break
+            
           case 'faculty':
-            endpoint = `${API_URL}/faculty/auth/login.php`;
-            break;
+            endpoint = `${API_URL}/faculty/auth/login.php`
+            break
+            
           case 'student':
-            endpoint = `${API_URL}/student/auth/login.php`;
-            break;
+            endpoint = `${API_URL}/student/auth/login.php`
+            break
+            
           default:
-            endpoint = `${API_URL}/auth/login.php`;
+            endpoint = `${API_URL}/auth/login.php`
         }
         
         console.log('Logging in to:', endpoint)
@@ -82,46 +89,55 @@ export default {
           commit('SET_TOKEN', response.data.token)
           commit('SET_USER', response.data.user)
           
-          // Set axios default header
+          // Set global auth header
           axios.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`
           
           return response.data
+        } else {
+          throw new Error(response.data.message || 'Login failed')
         }
+        
       } catch (error) {
         console.error('Login error:', error)
+        
         if (error.response) {
           console.error('Error response:', error.response.data)
         }
+        
         throw error
       }
     },
     
     logout({ commit }) {
       console.log('Logging out...')
+      
       commit('CLEAR_AUTH')
       delete axios.defaults.headers.common['Authorization']
+      
+      router.push('/admin/login')
     },
     
     checkAuth({ state, commit }) {
-      // Validate that user data exists
       if (state.token && state.user && state.user.role) {
         axios.defaults.headers.common['Authorization'] = `Bearer ${state.token}`
         return true
-      } else if (state.token && (!state.user || !state.user.role)) {
-        // Corrupted auth state - clear it
+      } 
+      
+      if (state.token && (!state.user || !state.user.role)) {
         console.log('Corrupted auth state detected, clearing...')
         commit('CLEAR_AUTH')
         return false
       }
+      
       return false
     }
   },
   
   getters: {
     isAuthenticated: state => {
-      // Only consider authenticated if both token and user role exist
       return !!(state.token && state.user && state.user.role)
     },
+    
     user: state => state.user,
     userRole: state => state.user?.role || null,
     userName: state => state.user?.name || null,

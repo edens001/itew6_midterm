@@ -126,3 +126,21 @@ EXPOSE 80
 
 # Start Apache
 CMD ["apache2-foreground"]
+
+
+
+FROM php:8.2-apache
+
+# Enable Apache rewrite
+RUN a2enmod rewrite
+
+# Copy project into Apache root
+COPY . /var/www/html/
+
+# Allow .htaccess
+RUN sed -i 's/AllowOverride None/AllowOverride All/g' /etc/apache2/apache2.conf
+
+# Set correct permissions
+RUN chown -R www-data:www-data /var/www/html
+
+EXPOSE 80
